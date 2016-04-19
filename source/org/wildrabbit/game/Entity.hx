@@ -43,4 +43,10 @@ class Entity extends FlxSprite
 	{
 		velocity.put();
 	}
+	public function getDamage(e:Entity):Int
+	{
+		//var diff:Int = mParent.getDiffLevel();
+		return 1;
+	}
+
 }

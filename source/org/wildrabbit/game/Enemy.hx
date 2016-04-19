@@ -85,7 +85,7 @@ class Enemy extends Entity
 		alpha = 1;
 		health = maxHealth;
 		mStunned = false;
-		mSpeed = mParent.isHardMode() ?  BASIC_ENEMY_SPEED * 1.2 : BASIC_ENEMY_SPEED;
+		mSpeed = getSpeed();
 		mHitTimer.cancel();
 		solid = true;
 		mDeadTween = null;		
@@ -286,7 +286,7 @@ class Enemy extends Entity
 			p.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
 		
 			bullet.reset(0,0);
-			bullet.velocity.set((mParent.isHardMode() ? BULLET_SPEED * 1.2: BULLET_SPEED) * Math.cos(shootAngle), BULLET_SPEED * Math.sin(shootAngle));
+			bullet.velocity.set(getBulletSpeed() * Math.cos(shootAngle), getBulletSpeed() * Math.sin(shootAngle));
 			bullet.setPosition(p.x - bullet._halfSize.x, p.y - bullet._halfSize.y);
 			bullet.angle = angle - 5;
 			bullet.start(this, BULLET_TTL);
@@ -294,7 +294,7 @@ class Enemy extends Entity
 		}
 
 		p.putWeak();
-		mShootTimer.start(mParent.isHardMode() ? SHOOT_COOLDOWN * 0.8 : SHOOT_COOLDOWN, onCooldownFinished);
+		mShootTimer.start(getRateOfFire(), onCooldownFinished);
 		if (shot && mShootSound != null && mCanPlayShoot)
 		{			
 			mCanPlayShoot = false;
@@ -305,5 +305,27 @@ class Enemy extends Entity
 	public function onCooldownFinished(timer:FlxTimer):Void
 	{
 		mCanShoot = mCanPlayShoot = true;
+	}
+	
+	//----------
+	public function getSpeed():Float
+	{
+		var speedMultipliers:Array<Float> = [1, 1.2, 1.4, 1.6];
+		var idx:Int = Math.floor(Math.min(speedMultipliers.length - 1, mParent.getDiffLevel()));
+		return BASIC_ENEMY_SPEED * speedMultipliers[idx];
+	}
+	
+	public function getBulletSpeed():Float
+	{
+		var speedMultipliers:Array<Float> = [1, 1.2, 1.4, 1.6];
+		var idx:Int = Math.floor(Math.min(speedMultipliers.length - 1, mParent.getDiffLevel()));
+		return BULLET_SPEED * speedMultipliers[idx];
+	}
+	
+	public function getRateOfFire():Float
+	{
+		var rateMultipliers:Array<Float> = [1, 0.8, 0.76, 0.65];
+		var idx:Int = Math.floor(Math.min(rateMultipliers.length - 1, mParent.getDiffLevel()));
+		return SHOOT_COOLDOWN * rateMultipliers[idx];
 	}
 }

@@ -23,6 +23,7 @@ import flixel.effects.particles.FlxEmitter;
 import org.wildrabbit.FlxTimedEmitter;
 import org.wildrabbit.PlayState;
 import org.wildrabbit.PlayState.Shape;
+import org.wildrabbit.Reg;
 
 /**
  * ...
@@ -119,7 +120,7 @@ class Ship extends Entity
 		velocity = FlxVector.get();
 		acceleration = FlxVector.get();
 		maxVelocity.set(speed,speed);
-		angle = FlxAngle.wrapAngle(FlxAngle.angleBetweenMouse(this, true));
+		angle = 0;//FlxAngle.wrapAngle(FlxAngle.angleBetweenMouse(this, true));
 		
 		mWorld = mParent.mWorld;
 		centerOrigin();
@@ -189,6 +190,9 @@ class Ship extends Entity
 	{
 		super.update(elapsed);
 		
+				
+		var velocityVec:FlxVector = cast(velocity, FlxVector);
+		
 		mPlayTime += elapsed;
 		
 		if (mHalo != null)
@@ -196,8 +200,19 @@ class Ship extends Entity
 			mHalo.setPosition(x, y);
 		}
 		
-		angle = FlxAngle.wrapAngle(FlxAngle.asDegrees(mParent.mInput.aimDirection));
 		velocity.set(mParent.mInput.xValue, mParent.mInput.yValue);
+		
+		if (Reg.selectedInputScheme == InputScheme.Gamepad && !mParent.mInput.shoot)
+		{
+			if (velocityVec.length > 0.1)
+			{
+				angle = FlxAngle.wrapAngle(velocityVec.degrees);
+			}
+		}
+		else 
+		{
+			angle = FlxAngle.wrapAngle(FlxAngle.asDegrees(mParent.mInput.aimDirection));
+		}
 
 		if (mParent.mInput.prev)
 		{
@@ -217,8 +232,7 @@ class Ship extends Entity
 			}
 			switchShape(nextShape);
 		}
-		
-		var velocityVec:FlxVector = cast(velocity, FlxVector);
+
 		if (!velocityVec.isZero())
 		{
 			velocityVec.normalize();
@@ -241,6 +255,8 @@ class Ship extends Entity
 		updateMotion(elapsed);
 		
 		updateCollisions();
+		
+
 	}
 	
 	public function shoot(theAngle:Float):Void

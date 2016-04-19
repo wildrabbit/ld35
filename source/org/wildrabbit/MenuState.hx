@@ -24,6 +24,10 @@ class MenuState extends FlxState
 	
 	var allowExit:Bool;
 	var tween:FlxTween;
+	
+		public var mCursorSprite: FlxSprite;
+	
+
 	/**
 	 * Function that is called up when to state is created to set it up.
 	 */
@@ -46,6 +50,10 @@ class MenuState extends FlxState
 		hint.size = 14;
 		hint.color = FlxColor.PURPLE;
 		add(hint);
+		
+		mCursorSprite = new FlxSprite(0,0,"assets/images/cursor.png");
+		FlxG.mouse.load(mCursorSprite.pixels);
+		
 	}
 
 	/**
@@ -71,7 +79,7 @@ class MenuState extends FlxState
 	override public function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
-		if (allowExit && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed))
+		if (allowExit && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed || (Reg.gamepadAvailable() && FlxG.gamepads.lastActive.justPressed.A)))
 		{
 			FlxG.switchState(new HelpState());
 		}		

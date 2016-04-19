@@ -4,12 +4,15 @@ import flixel.FlxG;
 import flixel.FlxState;
 import flixel.FlxSprite;
 import flixel.addons.display.FlxBackdrop;
+import flixel.input.gamepad.FlxGamepadButton;
+import flixel.input.gamepad.FlxGamepadInputID;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import flixel.util.FlxStringUtil;
 import flixel.util.FlxTimer;
+import org.wildrabbit.Reg;
 
 /**
  * ...
@@ -33,37 +36,44 @@ class GameOverState extends FlxState
 		super.create();
 		pause = new FlxTimer();
 		allowExit = false;
+
 		pause.start(0.5, function(t:FlxTimer):Void
-		{
-			hint.visible = true;
-			tween = FlxTween.tween(hint.scale, { x:1.1, y:1.1 }, 1, { ease:FlxEase.circOut, type:FlxTween.PINGPONG } );
+		{			
 			allowExit = true;
 		});
 		
 		add(new FlxSprite(0, 0, "assets/images/bg_back.png"));
-		hint = new FlxText(0, FlxG.height / 2, FlxG.width, "THANKS FOR PLAYING!");
+		hint = new FlxText(0, FlxG.height / 2 - 72, FlxG.width, "THANKS FOR PLAYING!", 36);
 		hint.alignment = FlxTextAlign.CENTER;
-		hint.visible = false;
-		hint.size = 14;
 		hint.color = FlxColor.ORANGE;
+		hint.scale.set(0.8, 0.8);
 		add(hint);
+		tween = FlxTween.tween(hint.scale, { x:1, y:1 }, 1, { ease:FlxEase.circOut, type:FlxTween.ONESHOT } );
 		
-		var t:FlxText = new FlxText(0, FlxG.height / 2 + 20, FlxG.width, "Your score: " + Reg.score + ", Highest: " + Reg.highScore, 14);
+		var t:FlxText = new FlxText(0, FlxG.height / 2 , FlxG.width, "Your score: " + Reg.score + ", Highest: " + Reg.highScore, 14);
 		t.alignment = FlxTextAlign.CENTER;
 		add(t);
-		t = new FlxText(0, FlxG.height / 2 + 40, FlxG.width, "Your playtime: " + FlxStringUtil.formatTime(Reg.time,true) + ", Highest: " + FlxStringUtil.formatTime(Reg.maxTime,true), 14);
+		t = new FlxText(0, FlxG.height / 2 + 20, FlxG.width, "Your playtime: " + FlxStringUtil.formatTime(Reg.time,true) + ", Highest: " + FlxStringUtil.formatTime(Reg.maxTime,true), 14);
 		t.alignment = FlxTextAlign.CENTER;
 		add(t);
+		t = new FlxText(0, FlxG.height / 2 + 50, FlxG.width, getHintText(), 14);
+		t.alignment = FlxTextAlign.CENTER;
+		add(t);
+		
 		
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));
 		FlxG.sound.music.stop();
 	}
-
-	function getFormat(secs:Float):String
+	public function getHintText():String
 	{
-		var remSecs:Float = secs - Math.ffloor(secs);
-		var cents:Int= Math.floor(remSecs * 100);
-		return Math.floor(secs) + "." + cents + "s";
+		if (Reg.selectedInputScheme == InputScheme.Gamepad)
+		{
+			return ("Press START to restart, BACK to go back to the menu");
+		}
+		else
+		{
+			return ("Press SPACE to restart, ESC to go back to the menu");
+		}
 	}
 	/**
 	 * Function that is called when this state is destroyed - you might want to
@@ -88,9 +98,17 @@ class GameOverState extends FlxState
 	override public function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
-		if (allowExit && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed))
+		if (allowExit)
 		{
-			FlxG.switchState(new MenuState());
+			var isGamepad:Bool = Reg.selectedInputScheme == InputScheme.Gamepad;
+			if (isGamepad && FlxG.gamepads.anyJustPressed(FlxGamepadInputID.START) || (!isGamepad && FlxG.keys.justReleased.SPACE))
+			{
+				FlxG.switchState(new PlayState());				
+			}
+			else if (isGamepad && FlxG.gamepads.anyJustPressed(FlxGamepadInputID.BACK) || (!isGamepad && FlxG.keys.justReleased.ESCAPE))
+			{
+				FlxG.switchState(new MenuState());				
+			}
 		}		
 	}
 	

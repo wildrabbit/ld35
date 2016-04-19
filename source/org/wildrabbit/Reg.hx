@@ -1,6 +1,16 @@
 package org.wildrabbit;
 
+import flixel.FlxG;
 import flixel.util.FlxSave;
+
+ 
+ @:enum
+ abstract InputScheme(Int) from Int to Int
+ {
+	 var Gamepad = 0;
+	 var WASD = 1;
+	 var ZQSD = 2;
+ }
 
 /**
  * Handy, pre-built Registry class that can be used to store
@@ -9,6 +19,12 @@ import flixel.util.FlxSave;
  */
 class Reg
 {
+	public static var selectedInputScheme:InputScheme = InputScheme.WASD;
+	public static function gamepadAvailable():Bool
+	{
+		return FlxG.gamepads.lastActive != null;
+	}
+	
 	/**
 	 * Generic levels Array that can be used for cross-state stuff.
 	 * Example usage: Storing the levels of a platformer.

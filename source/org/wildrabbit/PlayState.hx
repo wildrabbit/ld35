@@ -18,6 +18,7 @@ import flixel.math.FlxPoint;
 import flixel.math.FlxVector;
 import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.text.FlxText;
+import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.math.FlxMath;
@@ -34,10 +35,17 @@ import org.wildrabbit.game.Pickup;
 import org.wildrabbit.game.Ship;
 import org.wildrabbit.game.World;
 import org.wildrabbit.game.EnemyBullet;
+import org.wildrabbit.GameInput;
+import org.wildrabbit.Reg;
 
 /**
  * A FlxState which can be used for the actual gameplay.
  */
+
+typedef Cheats =
+{
+	var godMode:Bool;
+}
 
  @:enum
  abstract Shape(Int) from Int to Int
@@ -77,8 +85,6 @@ class PlayState extends FlxState
 	public var mPlayerShip:Ship;
 	
 	public var mBullets:FlxTypedGroup<BaseBullet>;
-	public var mPlayerWeapon:FlxWeapon;
-	
 	public var mEnemies:FlxTypedGroup<Enemy>;
 	public var mPickups:FlxTypedGroup<Pickup>;
 	
@@ -91,6 +97,7 @@ class PlayState extends FlxState
 	public var mScore:FlxText;
 	public var mPlaytime:FlxText;
 	public var mMultiplierText:FlxText;
+	public var mDiffText:FlxText;
 	public var mBlasterHint:FlxText;
 	
 	public var mScoreMultiplier:Int;
@@ -109,12 +116,16 @@ class PlayState extends FlxState
 	public var mCurrent:FlxSprite;
 	public var mNext:FlxSprite;
 	
+	private var mCheats:Cheats;
+	
 	/**
 	 * Function that is called up when to state is created to set it up.
 	 */
 	override public function create():Void
 	{
 		super.create();
+		
+		mCheats = { godMode:false };
 		
 		//FlxG.debugger.visible = true;
 		//FlxG.debugger.drawDebug = true;
@@ -126,10 +137,40 @@ class PlayState extends FlxState
 		
 		mSpawnTimer = new FlxTimer();
 		
-		mInput = new GameInput();
+		var inputName:String;
+		switch(Reg.selectedInputScheme)
+		{
+			case InputScheme.Gamepad:
+			{
+				mInput = new GamepadInput();
+				FlxG.mouse.visible = false;
+				inputName = "Gamepad";
+			}
+			case InputScheme.WASD:
+			{
+				mInput = new KeyMouseInput();
+				// Load the sprite's graphic to the cursor
+				FlxG.mouse.visible = true;
+				
 
+				inputName = "MouseKBD-WASD";
+			}
+			case InputScheme.ZQSD:
+			{
+				mInput = new KeyMouseInput(false);
+				// Load the sprite's graphic to the cursor
+				FlxG.mouse.visible = true;
+				
+
+				inputName = "MouseKBD-ZQSD";
+			}
+		}
+		
+		
 		add(new FlxSprite(0, 0, "assets/images/bg_back.png"));
-		var radius:Int= 300;
+		add(new FlxText(32, 596, 352, "Control scheme: " + inputName, 14));
+
+		var radius:Int= 296;
 		mWorld = new World(0, 0, cast(radius, Float));
 		mWorld.makeGraphic(w, h, FlxColor.TRANSPARENT);
 		mWorld.setCenter(w / 2, h / 2);
@@ -184,7 +225,7 @@ class PlayState extends FlxState
 		
 
 		
-		mPlayerShip = new Ship(this, 200, 200, 150);
+		mPlayerShip = new Ship(this, FlxG.width/2, FlxG.height/2, 150);
 		
 		var trail:FlxTrail = new FlxTrail(mPlayerShip, null, 2, 0,0.3);
 		mPlayerShip.trail = trail;
@@ -226,27 +267,15 @@ class PlayState extends FlxState
 		var cents:Int= Math.floor(remSecs * 100);
 		mPlaytime = new FlxText(32, 96, 180, "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime, true), 14);
 		add(mPlaytime);
-		mMultiplierText = new FlxText(32, 112, 220, "Current bonus: " + mScoreMultiplier, 14);
+		mMultiplierText = new FlxText(32, 112, 200, "Mult: " + mScoreMultiplier, 14);
 		add(mMultiplierText);
+		mDiffText = new FlxText(32, 128, 80, "Diff: " + getDiffLevel(), 14);
+		add(mDiffText);
 		
 		FlxG.sound.volume = 0.6;
 		
-		// Create a white circle to use as a cursor graphic
-		var cursorSprite = new FlxSprite();
-		cursorSprite.makeGraphic(32, 32, FlxColor.TRANSPARENT);
-		FlxSpriteUtil.drawCircle(cursorSprite, 16, 16, 16, FlxColor.fromRGB(64,64,64));
-		FlxSpriteUtil.drawCircle(cursorSprite, 16, 16, 14, FlxColor.TRANSPARENT);
-		FlxSpriteUtil.drawCircle(cursorSprite, 16, 16, 2, FlxColor.fromRGB(64,64,64));
-		FlxSpriteUtil.drawRect(cursorSprite, 14, 0, 4, 8);
-		FlxSpriteUtil.drawRect(cursorSprite, 0, 14, 8, 4);
-		FlxSpriteUtil.drawRect(cursorSprite, 14, 24, 4, 8);
-		FlxSpriteUtil.drawRect(cursorSprite, 24, 14, 8, 4);
-
-		// Load the sprite's graphic to the cursor
-		FlxG.mouse.load(cursorSprite.pixels);
-		
 		mScoreMultiplier = 1;
-		mToNextLife = isHardMode() ?  2 * KILLS_TO_LIFE : KILLS_TO_LIFE;
+		mToNextLife = toNextLife();
 		mToNextMultiplier = KILLS_TO_MULTIPLIER;
 		
 		FlxG.watch.add(mPlayerShip, "mKills", "kills");
@@ -261,6 +290,9 @@ class PlayState extends FlxState
 		FlxG.sound.playMusic("assets/music/testMusic.wav", 0.3);
 		
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));
+		#if debug
+		add(new FlxText(880, 600, 40, "DBG", 14));
+		#end
 	}
 
 	public function updateShapeHint():Void
@@ -276,15 +308,11 @@ class PlayState extends FlxState
 		 mPrev.animation.play(Ship.ShapeAnims[cast(prevS, Int)]);
 		 mPrev.color = Entity.ShapeColours[cast(prevS, Int)];
 	 }
-	 
-	public function isHardMode():Bool
-	{
-		return mPlayerShip.mPlayTime > 180;
-	}
 	
 	public function onSpawnTimeout(timer:FlxTimer):Void
 	{
-		var numEnemies:Int = isHardMode() ? FlxG.random.int(2, 6) : FlxG.random.int(1, 4);
+		var enemyRange:FlxBounds<Int> = getEnemyWaveSize();
+		var numEnemies:Int = FlxG.random.int(enemyRange.min, enemyRange.max);
 		
 		var point:FlxPoint = FlxPoint.get();
 		var waveType:Shape = FlxG.random.int(Shape.Circle, Shape.Square);
@@ -294,7 +322,6 @@ class PlayState extends FlxState
 			var dist = Math.POSITIVE_INFINITY;
 			if (e != null)
 			{
-				e.reset(0,0);
 				e.start(waveType);
 				var attempts:Int = 10;
 				do {
@@ -304,9 +331,18 @@ class PlayState extends FlxState
 					dist = FlxMath.distanceToPoint(mPlayerShip, point.add(FlxG.width/2, FlxG.height/2));
 					attempts--;
 				}
-				while (dist < (mPlayerShip.width * (isHardMode()? 4 : 6)) && attempts > 0);
-				
+				while (dist < getPlayerLeeway() && attempts > 0);
+				e.reset(0, 0);
 				e.setPosition(point.x, point.y);
+				 e.scale.set(0.1, 0.1);
+				 e.alpha = 0.2; 
+				FlxTween.tween(e, { alpha:1 }, 0.8, { ease:FlxEase.quartOut, type:FlxTween.ONESHOT} ); 
+				FlxTween.tween(e.scale, { x:1, y:1 }, 0.4,
+					{ ease:FlxEase.elasticOut, type:FlxTween.ONESHOT, 
+						onStart:function(t:FlxTween) { e.active = false; e.solid = false; },
+						onComplete:function(t:FlxTween) { e.active = true; e.solid = true; }
+						
+					} );
 			}
 		}
 		point.put();
@@ -320,6 +356,7 @@ class PlayState extends FlxState
 	override public function destroy():Void
 	{
 		super.destroy();
+		FlxG.mouse.visible = true;
 	}
 
 	/**
@@ -331,6 +368,12 @@ class PlayState extends FlxState
 		
 		if (mInput.reset)
 		{
+			if (mPause)
+			{
+				mPause = false;
+				FlxTimer.manager.active = true;
+				FlxTween.manager.active = true;
+			}
 			FlxG.resetGame(); // TEMPORARY!!
 		}
 		
@@ -347,6 +390,13 @@ class PlayState extends FlxState
 			FlxG.sound.muted = ! FlxG.sound.muted;
 		}
 		
+		#if !NO_CHEATS
+		if (mInput.toggleGodMode)
+		{
+			mCheats.godMode = !mCheats.godMode;
+		}
+		#end
+		
 		if (mPause)
 		{
 			return;
@@ -357,11 +407,12 @@ class PlayState extends FlxState
 		mEnergy.text = "Energy: " + mPlayerShip.mEnergy + "/" + mPlayerShip.mMaxEnergy;
 		mLives.text = "Lives: " + mPlayerShip.mLives + "/" + mPlayerShip.mStartLives;
 		mScore .text = "Score: " + mPlayerShip.mScore;
-		mMultiplierText.text = "Current multiplier: " +mScoreMultiplier;
+		mMultiplierText.text = "Mult: " +mScoreMultiplier;
 		
 		var remSecs:Float = mPlayerShip.mPlayTime - Math.ffloor(mPlayerShip.mPlayTime);
 		var cents:Int= Math.floor(remSecs * 100);
-		mPlaytime.text = "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime,true);
+		mPlaytime.text = "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime, true);
+		mDiffText.text =  "Diff: " + getDiffLevel();
 		
 		mBlasterHint.color = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy ? FlxColor.CYAN : FlxColor.WHITE;
 		mBlasterHint.text = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy ? "Blaster ready!!" : "Blaster loading";
@@ -424,14 +475,19 @@ class PlayState extends FlxState
 			}
 			else
 			{
-				playerTakesDamage(bullet, 1);
+				#if !NO_CHEATS
+				if (!mCheats.godMode)
+				#end
+				{
+					playerTakesDamage(bullet);					
+				}
 			}
 		}
 	}
 	
-	public function playerTakesDamage(source:Entity, dmg:Float):Void
+	public function playerTakesDamage(source:Entity):Void
 	{
-		mPlayerShip.HP-= dmg;
+		mPlayerShip.HP-= source.getDamage(mPlayerShip);
 		if (mPlayerShip.HP < 0)
 		{
 			mPlayerShip.HP = 0;
@@ -465,7 +521,12 @@ class PlayState extends FlxState
 	
 	public function onPlayerEnemyCollision(player:Ship, enemy:Enemy):Void
 	{
-		playerTakesDamage(enemy, 1);
+		#if !NO_CHEATS
+		if (!mCheats.godMode)
+		#end
+		{
+			playerTakesDamage(enemy);
+		}
 	}
 	
 	public function onPlayerDied():Void
@@ -489,7 +550,7 @@ class PlayState extends FlxState
 		}
 		
 		var t:FlxTimer = new FlxTimer();
-		t.start(0.5, function(t:FlxTimer):Void { FlxG.switchState(new GameOverState()); } );
+		t.start(0.5, function(t:FlxTimer):Void {FlxG.switchState(new GameOverState()); } );
 	}
 	
 		
@@ -524,7 +585,7 @@ class PlayState extends FlxState
 		{
 			if (spawnPickup(PickupType.Life))
 			{
-				mToNextLife = isHardMode() ? 2 * KILLS_TO_LIFE : KILLS_TO_LIFE;
+				mToNextLife = toNextLife();
 			}
 		}
 		
@@ -572,6 +633,33 @@ class PlayState extends FlxState
 	
 	public function onShapeShift():Void
 	{
-		updateShapeHint();
+		updateShapeHint();		
+	}
+	
+	//----------BALANCING--------------//
+	
+	public function getDiffLevel():Int
+	{
+		return Math.floor(Math.min((mPlayerShip.mPlayTime / 60), 4));
+	}
+	
+	
+	public function toNextLife():Int
+	{
+		return KILLS_TO_LIFE * (1 + getDiffLevel());
+	}
+	
+	public function getEnemyWaveSize():FlxBounds<Int>
+	{
+		var minValues:Array<Int> = [1, 2, 3,4];
+		var maxValues:Array<Int> = [4, 6, 6, 7];
+		var idx:Int = Math.floor(Math.min(getDiffLevel(), minValues.length - 1));
+		return new FlxBounds<Int>(minValues[idx],maxValues[idx]);
+	}
+	
+	public function getPlayerLeeway():Float 
+	{
+		var leeways:Array<Float> = [6, 4, 3, 3];
+		return mPlayerShip.width * leeways[Math.floor(Math.min(getDiffLevel(), leeways.length - 1))];
 	}
 }

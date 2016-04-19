@@ -15,7 +15,8 @@
 	
 	<!--These window settings apply to all targets-->
 	<window width="960" height="640" fps="60" background="#000000" hardware="true" vsync="true" />
-	
+		
+	<window if="flash" width="900" height="600" fps="60" background="#000000" hardware="true" vsync="true" />
 	<!--Web-specific-->
 	<window if="web" orientation="portrait"  />
 	
@@ -75,6 +76,8 @@
 	
 	<!--Enable this for Nape release builds for a serious peformance improvement-->
 	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
+		
+	<haxedef name="NO_CHEATS" unless="debug"/>
 	
 	<!--------------------------------CUSTOM---------------------------------------->
 	

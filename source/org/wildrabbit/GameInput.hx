@@ -13,6 +13,8 @@ import org.wildrabbit.game.Entity;
  */
 class GameInput
 {
+	public var toggleGodMode:Bool;
+	
 	public var xValue:Float;
 	public var yValue:Float;
 	public var next:Bool;
@@ -24,25 +26,75 @@ class GameInput
 	public var gamepadEnabled:Bool;
 	public var aimDirection:Float;
 	
-	
 	public var togglePause:Bool;
 	public var reset:Bool;
 	public var toggleMute:Bool;
 	
-	
-	public function new() 
-	{
-		
-	}
-	
+	private function new():Void{}
 	public function gatherInputs(player:Entity):Void
 	{
+		toggleGodMode = FlxG.keys.justReleased.F1;
+	}
+}
+
+class KeyMouseInput extends GameInput
+{	
+	public var mWASD:Bool;
+	public function new(wasd:Bool = true)
+	{
+		super();
+		mWASD = wasd;
+	}
+	override public function gatherInputs(player:Entity):Void
+	{
+		super.gatherInputs(player);
+		xValue = yValue = 0;
+		next = prev = shoot = blast = reset = false;		
+
+		aimDirection = FlxAngle.angleBetweenMouse(player);
+		toggleMute = FlxG.keys.justReleased.M;
+		togglePause = FlxG.keys.justReleased.P || FlxG.keys.justReleased.ESCAPE;
+		if (FlxG.keys.pressed.LEFT || (FlxG.keys.pressed.A && mWASD || FlxG.keys.pressed.Q && !mWASD))
+		{
+			xValue = -1;
+		}
+		else if (FlxG.keys.pressed.RIGHT || FlxG.keys.pressed.D)
+		{
+			xValue = 1;
+		}
+		if (FlxG.keys.pressed.DOWN || FlxG.keys.pressed.S)
+		{
+			yValue = 1;
+		}
+		else if (FlxG.keys.pressed.UP || (FlxG.keys.pressed.Z && !mWASD || FlxG.keys.pressed.W && mWASD))
+		{
+			yValue = -1;
+		}
+		
+		if (!prev) prev = (mWASD && FlxG.keys.justPressed.Q  || !mWASD && FlxG.keys.justPressed.A)|| FlxG.mouse.wheel < 0;
+		if (!next) next = (FlxG.keys.justPressed.E || FlxG.mouse.wheel > 0);
+		if (!blast) blast = FlxG.keys.justPressed.SPACE || FlxG.mouse.justPressedRight;		
+		if (!shoot) shoot = FlxG.mouse.pressed;
+		if (!reset) reset = FlxG.keys.justPressed.R;
+	}
+}
+
+class GamepadInput extends GameInput
+{
+	public function new()
+	{
+		super();
+	}
+	override public function gatherInputs(player:Entity):Void
+	{	
+		super.gatherInputs(player);
 		xValue = yValue = 0;
 		next = prev = shoot = blast = reset = false;
-		gamepadEnabled = false;
-/*		#if !FLX_NO_GAMEPAD		
+		togglePause = toggleMute = false;
+		
+		#if !FLX_NO_GAMEPAD		
 		var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
-		gamepadEnabled = gamepad != null && gamepad.anyInput();
+		gamepadEnabled = gamepad != null;
 		if (gamepadEnabled)
 		{
 			xValue = gamepad.analog.value.LEFT_STICK_X;
@@ -54,44 +106,18 @@ class GameInput
 			//shoot = gamepad.pressed.A;
 			
 			var aim:FlxVector =  new FlxVector(gamepad.analog.value.RIGHT_STICK_X, gamepad.analog.value.RIGHT_STICK_Y);
-			shoot = aim.length > 0.1;
+			shoot = aim.length > 0.5;
 			
 			blast = gamepad.justPressed.A;
 
 			aim.normalize();
-			aimDirection = aim.degrees;
+			aimDirection = aim.radians;
 			
+			toggleMute = gamepad.justPressed.BACK;
+			togglePause = gamepad.justPressed.START;
+
+			reset = gamepad.justPressed.LEFT_SHOULDER && gamepad.justPressed.RIGHT_SHOULDER;
 		}		
-		#end*/
-		
-		if (!gamepadEnabled)
-		{
-			aimDirection = FlxAngle.angleBetweenMouse(player);
-		}
-		
-		toggleMute = FlxG.keys.justReleased.M;
-		togglePause = FlxG.keys.justReleased.P || FlxG.keys.justReleased.ESCAPE;
-		if (FlxG.keys.pressed.A || FlxG.keys.pressed.LEFT)
-		{
-			xValue = -1;
-		}
-		else if (FlxG.keys.pressed.D || FlxG.keys.pressed.RIGHT)
-		{
-			xValue = 1;
-		}
-		if (FlxG.keys.pressed.S || FlxG.keys.pressed.DOWN)
-		{
-			yValue = 1;
-		}
-		else if (FlxG.keys.pressed.W || FlxG.keys.pressed.UP)
-		{
-			yValue = -1;
-		}
-		
-		if (!prev) prev = (FlxG.keys.justPressed.Q || FlxG.mouse.wheel < 0);
-		if (!next) next = (FlxG.keys.justPressed.E || FlxG.mouse.wheel > 0);
-		if (!blast) blast = FlxG.keys.justPressed.SPACE || FlxG.mouse.justPressedRight;		
-		if (!shoot) shoot = FlxG.mouse.pressed;
-		if (!reset) reset = FlxG.keys.justPressed.R;
+		#end
 	}
 }
