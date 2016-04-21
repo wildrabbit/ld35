@@ -50,7 +50,7 @@ class HelpState extends FlxState
 		hint = new FlxText(0, FlxG.height / 2, FlxG.width, "PRESS ANY KEY TO START");
 		hint.alignment = FlxTextAlign.CENTER;
 		hint.size = 16;
-		hint.color = FlxColor.LIME;
+		hint.color = FlxColor.fromString("0x0add00");
 
 		add(msg1);
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));

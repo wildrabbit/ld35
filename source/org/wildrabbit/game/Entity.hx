@@ -17,7 +17,7 @@ class Entity extends FlxSprite
 	public var mID:Int;
 	public var maxHealth:Int;
 	
-	public static var ShapeColours:Array<FlxColor> = [FlxColor.ORANGE, FlxColor.PURPLE, FlxColor.LIME];
+	public static var ShapeColours:Array<FlxColor> = [FlxColor.fromString("0xFF7C00"), FlxColor.fromString("0xab13a9"), FlxColor.fromString("0x0add00")];
 	
 	public function new(parent:PlayState, speed:Float) 
 	{

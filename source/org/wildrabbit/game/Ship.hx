@@ -107,7 +107,7 @@ class Ship extends Entity
 	public function new(parent:PlayState, x:Float, y:Float, speed:Float)
 	{
 		super(parent, speed);
-		loadGraphic("assets/images/ship_shapes.png", true, 32, 32);
+		loadGraphic("assets/images/ship_shapesv2.png", true, 32, 32);
 		animation.add("circle", [0], 24, true, false, false);
 		animation.add("triangle", [1], 24, true, false, false);
 		animation.add("square", [2], 24, true, false, false);

@@ -53,10 +53,11 @@ class Enemy extends Entity
 	public function new(parent:PlayState) 
 	{
 		super(parent, 0);
-		loadGraphic("assets/images/ship_shapes.png", true, 32, 32);
-		animation.add("circle", [4, 5], 8);
-		animation.add("triangle", [8, 9], 8);
-		animation.add("square", [12, 13], 8);	
+		loadGraphic("assets/images/ship_shapesv2.png", true, 32, 32);
+		animation.add("circle", [4, 5], 2);
+		animation.add("triangle", [8, 9], 2);
+		animation.add("square", [12, 13], 2);	
+		//blend = BlendMode.ADD;
 		mHitTimer = new FlxTimer();
 		mDeadTween  = null;
 		mID = count++;
@@ -116,8 +117,8 @@ class Enemy extends Entity
 			velocityVec.set(mParent.mPlayerShip.x - x, mParent.mPlayerShip.y - y);
 			velocityVec.normalize().scale(mSpeed);
 			//angle = FlxAngle.wrapAngle(FlxAngle.angleBetween(this, mParent.mPlayerShip, true));
-			velocity.x =  velocityVec.x + FlxG.random.float( -20.0, 20.0);
-			velocity.y =  velocityVec.y + FlxG.random.float( -20.0, 20.0);			
+			velocity.x =  velocityVec.x + FlxG.random.float( -10.0, 10.0);
+			velocity.y =  velocityVec.y + FlxG.random.float( -10.0, 10.0);			
 		}
 
 		
@@ -197,6 +198,7 @@ class Enemy extends Entity
 		mStunned = true;
 		solid = false;
 		velocity.set(0, 0);
+		mCanShoot = false;
 		
 		if (mDeathSound != null)
 		{

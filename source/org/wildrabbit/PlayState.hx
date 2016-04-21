@@ -20,6 +20,7 @@ import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
+import flixel.ui.FlxBar;
 import flixel.ui.FlxButton;
 import flixel.math.FlxMath;
 import flixel.util.FlxColor;
@@ -100,6 +101,10 @@ class PlayState extends FlxState
 	public var mDiffText:FlxText;
 	public var mBlasterHint:FlxText;
 	
+	public var mBlasterTween:FlxTween;
+	public var mMultiplierTween:FlxTween;
+	public var mIngameMultText:FlxText;
+	
 	public var mScoreMultiplier:Int;
 	public var mToNextLife:Int;
 	public var mToNextMultiplier:Int;
@@ -117,6 +122,9 @@ class PlayState extends FlxState
 	public var mNext:FlxSprite;
 	
 	private var mCheats:Cheats;
+	
+	private var mHealthBar:FlxBar;
+	private var mEnergyBar:FlxBar;
 	
 	/**
 	 * Function that is called up when to state is created to set it up.
@@ -250,29 +258,42 @@ class PlayState extends FlxState
 		/*mPlayerWeapon = new FlxWeapon("blah", createBullet, FlxWeaponFireFrom.PARENT(mPlayerShip, new FlxBounds<FlxPoint>(new FlxPoint(mPlayerShip.width, mPlayerShip.height/2))), FlxWeaponSpeedMode.SPEED(new FlxBounds<Float>(300,300)));
 		mPlayerWeapon.fireRate = 60;
 		mPlayerWeapon.positionOffset;*/
+		FlxG.sound.volume = 0.6;
 		
 		add(mPlayerShip);
 		
 		mSpawnTimer.start(FlxG.random.float(1, 4), onSpawnTimeout, 1);
 		
-		mHealth = new FlxText(32, 32, 180, "Health: " + mPlayerShip.HP + "/" + mPlayerShip.maxHealth, 14);
+		mHealth = new FlxText(32, 32, 72, "HP: ", 14);
 		add(mHealth);
-		mEnergy = new FlxText(32, 48, 180, "Energy: " + mPlayerShip.mEnergy + "/" + mPlayerShip.mMaxEnergy, 14);
+		mHealthBar = new FlxBar(104, 34, FlxBarFillDirection.LEFT_TO_RIGHT, 100, 14, mPlayerShip, "HP", 0, mPlayerShip.maxHealth);
+		mHealthBar.createColoredEmptyBar(FlxColor.GRAY);
+		mHealthBar.createGradientFilledBar([FlxColor.GREEN, FlxColor.YELLOW, FlxColor.RED], 10, 180, true, FlxColor.WHITE);
+		add(mHealthBar);
+
+		mEnergy = new FlxText(32, 64, 72, "Energy: ", 14);
 		add(mEnergy);
-		mLives = new FlxText(32, 64, 180, "Lives: " + mPlayerShip.mLives + "/" + mPlayerShip.mStartLives, 14);
-		add(mLives);
-		mScore = new FlxText(32, 80, 180, "Score: " + mPlayerShip.mScore, 14);
-		add(mScore);
-		var remSecs:Float = mPlayerShip.mPlayTime - Math.ffloor(mPlayerShip.mPlayTime);
-		var cents:Int= Math.floor(remSecs * 100);
-		mPlaytime = new FlxText(32, 96, 180, "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime, true), 14);
+		mEnergyBar = new FlxBar(104, 66, FlxBarFillDirection.LEFT_TO_RIGHT, 100, 14, mPlayerShip, "mEnergy", 0, mPlayerShip.mMaxEnergy);
+		mEnergyBar.createColoredEmptyBar(FlxColor.fromRGBFloat(0.1,0.1,0.1));
+		mEnergyBar.createGradientFilledBar([FlxColor.CYAN,FlxColor.BLUE], 4, 180, true, FlxColor.WHITE);
+		add(mEnergyBar);
+		
+		mPlaytime = new FlxText(FlxG.width - 224, FlxG.height/2 - 7, 180, "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime), 14);
+		mPlaytime.alignment = FlxTextAlign.RIGHT;
 		add(mPlaytime);
-		mMultiplierText = new FlxText(32, 112, 200, "Mult: " + mScoreMultiplier, 14);
-		add(mMultiplierText);
-		mDiffText = new FlxText(32, 128, 80, "Diff: " + getDiffLevel(), 14);
+
+		mScore = new FlxText(32, FlxG.height/2 - 7, 180, "Score: " + mPlayerShip.mScore, 14);
+		add(mScore);
+		mMultiplierText = new FlxText(68, FlxG.height / 2 + 12, 100, "(x" + mScoreMultiplier + ")", 24);		
+		if (mScoreMultiplier > 1)
+		{
+			add(mMultiplierText);			
+		}
+		mIngameMultText = new FlxText(0, 0, 100, "x2", 16);
+		mIngameMultText.alignment = FlxTextAlign.CENTER;
+		mDiffText = new FlxText(32, 96, 72, "Diff: " + getDiffLevel(), 14);
 		add(mDiffText);
 		
-		FlxG.sound.volume = 0.6;
 		
 		mScoreMultiplier = 1;
 		mToNextLife = toNextLife();
@@ -286,6 +307,9 @@ class PlayState extends FlxState
 		mBlasterHint.alignment = FlxTextAlign.CENTER;
 		add(mBlasterHint);
 		mBlasterHint.color = FlxColor.WHITE;
+		
+		mBlasterTween = FlxTween.tween(mBlasterHint.scale, { x:1.15, y:1.15 }, 0.4, { ease:FlxEase.bounceInOut, type:FlxTween.PINGPONG } );
+		mBlasterTween.active = false;
 		
 		FlxG.sound.playMusic("assets/music/testMusic.wav", 0.3);
 		
@@ -403,19 +427,20 @@ class PlayState extends FlxState
 		}
 		super.update(elapsed);
 		
-		mHealth.text = "Health: " + mPlayerShip.HP + "/" + mPlayerShip.maxHealth;
-		mEnergy.text = "Energy: " + mPlayerShip.mEnergy + "/" + mPlayerShip.mMaxEnergy;
-		mLives.text = "Lives: " + mPlayerShip.mLives + "/" + mPlayerShip.mStartLives;
+		//mHealth.text = "Health: " + mPlayerShip.HP + "/" + mPlayerShip.maxHealth;
+		//mEnergy.text = "Energy: " + mPlayerShip.mEnergy + "/" + mPlayerShip.mMaxEnergy;
+		//mLives.text = "Lives: " + mPlayerShip.mLives + "/" + mPlayerShip.mStartLives;
 		mScore .text = "Score: " + mPlayerShip.mScore;
-		mMultiplierText.text = "Mult: " +mScoreMultiplier;
+		mMultiplierText.text = "(x" +mScoreMultiplier + ")";
 		
-		var remSecs:Float = mPlayerShip.mPlayTime - Math.ffloor(mPlayerShip.mPlayTime);
-		var cents:Int= Math.floor(remSecs * 100);
-		mPlaytime.text = "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime, true);
+		mPlaytime.text = "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime);
 		mDiffText.text =  "Diff: " + getDiffLevel();
 		
-		mBlasterHint.color = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy ? FlxColor.CYAN : FlxColor.WHITE;
-		mBlasterHint.text = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy ? "Blaster ready!!" : "Blaster loading";
+		var blasterAvailable:Bool = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy;
+		mBlasterHint.color = blasterAvailable ? FlxColor.CYAN : FlxColor.WHITE;
+		mBlasterHint.text = blasterAvailable ? "Blaster ready!!" : "Blaster loading";
+		if (!blasterAvailable && mBlasterTween.active) mBlasterTween.active = false;
+		else if (blasterAvailable && !mBlasterTween.active) mBlasterTween.active = true;
 
 		
 		if (!mPlayerShip.alive) return;
@@ -557,7 +582,30 @@ class PlayState extends FlxState
 	public function onPlayerHit():Void
 	{
 		mEnemies.forEachAlive(function (e:Enemy):Void { e.onPlayerHit(mPlayerShip.getPosition()); } );
+		var isResetMult:Bool = mScoreMultiplier > 1;
+		
 		mScoreMultiplier = 1;
+		
+		if (isResetMult)
+		{
+			mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
+			,{ onComplete:function(t:FlxTween):Void { 
+					mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15
+						, { ease:FlxEase.backOut, type:FlxTween.ONESHOT , onComplete:function(t:FlxTween) { remove(mMultiplierText); } } ); 
+				}
+			, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			
+			mIngameMultText.text = "Bonus lost!";
+			mIngameMultText.color = FlxColor.RED;
+			mIngameMultText.alpha = 1;
+			add(mIngameMultText);
+			
+			var startX:Float = mPlayerShip.x;
+			var startY:Float = mPlayerShip.y;
+			
+			FlxTween.linearMotion(mIngameMultText, startX, startY, startX, startY - 40, 1);
+			FlxTween.tween(mIngameMultText, { alpha:0 }, 1, { onComplete:function(t:FlxTween) { remove(mIngameMultText); }} );
+		}
 		mToNextMultiplier = KILLS_TO_MULTIPLIER;
 	}
 	
@@ -578,6 +626,26 @@ class PlayState extends FlxState
 		{
 			mToNextMultiplier = KILLS_TO_MULTIPLIER;
 			mScoreMultiplier = Math.floor(Math.min(mScoreMultiplier + 1, 100));
+			
+			mIngameMultText.text = "x" + mScoreMultiplier;
+			mIngameMultText.color = FlxColor.YELLOW;
+			mIngameMultText.alpha = 1;
+			add(mIngameMultText);
+			
+			var startX:Float = mPlayerShip.x;
+			var startY:Float = mPlayerShip.y;
+			
+			FlxTween.linearMotion(mIngameMultText, startX, startY, startX, startY - 40, 1);
+			FlxTween.tween(mIngameMultText, { alpha:0 }, 1, { onComplete:function(t:FlxTween) { remove(mIngameMultText); }} );			
+			
+			if (mScoreMultiplier == 2)
+			{
+				add(mMultiplierText);				
+			}
+			mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
+			,{ onComplete:function(t:FlxTween):Void { mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15, {ease:FlxEase.backOut,type:FlxTween.ONESHOT } ); }
+			, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			
 		}
 				
 		mToNextLife--;
