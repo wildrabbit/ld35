@@ -23,13 +23,17 @@ class Bullet extends BaseBullet
 	public function new(playState:PlayState):Void
 	{
 		super(playState);
-				
+	}
+	
+	override public function doLoadGraphic():Void
+	{
 		loadGraphic("assets/images/bullet_main.png", true, 16,8);
 
 		animation.add("circle", [0], 1);
 		animation.add("triangle", [1], 1);
 		animation.add("square", [2], 1);
 		animation.add("explode", [3], 1);
+		
 	}
 	
 	override public function doDie():Void

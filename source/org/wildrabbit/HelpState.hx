@@ -44,7 +44,7 @@ class HelpState extends FlxState
 		msg1.setPosition(FlxG.width / 2 - msg1.width / 2, FlxG.height / 2 - msg1.height / 2);
 		msg2 = msg3 = null;
 		
-		pause.start(0.6, onTimeout);
+		pause.start(0.2, onTimeout);
 		bg = new FlxSprite(0, 0, "assets/images/bg_back.png");
 		add(bg);
 		hint = new FlxText(0, FlxG.height / 2, FlxG.width, "PRESS ANY KEY TO START");
@@ -54,7 +54,8 @@ class HelpState extends FlxState
 
 		add(msg1);
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));
-
+		Reg.cursorSprite = new FlxSprite(0, 0, "assets/images/cursor.png");
+		FlxG.mouse.load(Reg.cursorSprite.pixels);
 	}
 	
 	function onTimeout(t:FlxTimer):Void
@@ -76,6 +77,7 @@ class HelpState extends FlxState
 		remove(bg);
 		hint = null;
 		bg = null;
+		FlxG.mouse.unload();		
 	}
 
 	/**
@@ -90,6 +92,7 @@ class HelpState extends FlxState
 			{
 				if (FlxG.keys.justPressed.ANY || FlxG.mouse.justPressed  || (Reg.gamepadAvailable() && FlxG.gamepads.lastActive.justReleased.A))
 				{
+					FlxG.sound.play("assets/sounds/click.wav");
 					remove(msg1);
 					if (Reg.gamepadAvailable())
 					{
@@ -103,7 +106,7 @@ class HelpState extends FlxState
 					add(msg2);
 					
 					allowExit = false;
-					pause.start(0.6, onTimeout);
+					pause.start(0.2, onTimeout);
 					i++;				
 				}
 			}
@@ -126,6 +129,7 @@ class HelpState extends FlxState
 				
 				if (selected)
 				{
+					FlxG.sound.play("assets/sounds/click.wav");
 					if (msg2 != null)
 					{
 						remove(msg2);
@@ -151,12 +155,13 @@ class HelpState extends FlxState
 					add(msg3);
 					
 					allowExit = false;				
-					pause.start(0.6, onTimeout);
+					pause.start(0.2, onTimeout);
 					i++;					
 				}
 			}
 			else if (i == 2 && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed  || (Reg.gamepadAvailable() && FlxG.gamepads.lastActive.justReleased.A)))
 			{
+				FlxG.sound.play("assets/sounds/click.wav");
 				if (msg3 != null)				
 				{
 					remove(msg3);
@@ -164,12 +169,12 @@ class HelpState extends FlxState
 				}
 				add(hint);
 				allowExit = false;				
-				pause.start(0.3, onTimeout);
+				pause.start(0.2, onTimeout);
 				i++;				
 			}			
 			else if (i == 3 && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed  || (Reg.gamepadAvailable() && FlxG.gamepads.lastActive.justReleased.A)))
 			{
-				FlxG.switchState(new PlayState());
+				FlxG.sound.play("assets/sounds/click.wav", 1, false, null, true, function(){FlxG.switchState(new PlayState());});
 			}
 		}		
 	}

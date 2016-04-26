@@ -1,5 +1,7 @@
 package org.wildrabbit.game;
 
+import flixel.math.FlxVector;
+import flixel.math.FlxVelocity;
 import org.wildrabbit.game.Entity;
 import flixel.FlxSprite;
 import flixel.math.FlxPoint;
@@ -10,6 +12,16 @@ import flixel.util.FlxColor;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxTimer;
 import org.wildrabbit.PlayState;
+
+
+typedef BulletConfig =
+{
+	var graphic:FlxGraphicAsset;
+	var speed:Float;
+	var lifetime:Float;
+	var width:Float;
+	var height:Float;
+}
 
 /**
  * ...
@@ -22,9 +34,17 @@ class BaseBullet extends Entity
 	var flxTimer:FlxTimer;
 	public var collided:Bool;
 	public var mOwner:Entity;
+	private var mConfig:BulletConfig;
 
 	public var mSameDamage:Int = 1;
 	public var mOppositeDamage:Int = 2;
+	
+	public var baseSpeed(get, null):Float;
+	
+	function get_baseSpeed():Float
+	{
+		return mConfig.speed;
+	}
 	
 	var t:FlxTween;
 	
@@ -37,18 +57,29 @@ class BaseBullet extends Entity
 
 	}
 	
-	public function start(owner:Entity, ttl:Float):Void
+	public function start(owner:Entity, config:BulletConfig, position:FlxPoint, direction:FlxVector, orientation:Float):Void
 	{
+		reset(0, 0);
 		mOwner = owner;
+		mConfig = config;
 		switchShape(mOwner.mShape);
+		
+		doLoadGraphic();
 		
 		alpha = 1.0;
 		solid = true;
 		flxTimer.cancel();
-		flxTimer.start(ttl);
+		flxTimer.start(config.lifetime);
 		collided = false;
 		t = null;
 		blend  = flash.display.BlendMode.ADD;
+		
+		setPosition(position.x, position.y);
+		var velocityVec:FlxVector = cast(velocity, FlxVector);
+		velocityVec.set(direction.x, direction.y);
+		velocityVec.scale(Balancing.getBulletSpeed(this, mOwner.mParent.mPlayerShip.mLevel));
+		angle = orientation;
+		
 	}
 	
 	override public function switchShape(shape:Shape):Void
@@ -62,6 +93,11 @@ class BaseBullet extends Entity
 	}
 	
 	public function doDie():Void {
+		
+	}
+	
+	public function doLoadGraphic():Void
+	{
 		
 	}
 	

@@ -18,6 +18,35 @@ import flixel.util.FlxTimer;
 import org.wildrabbit.FlxTimedEmitter;
 import org.wildrabbit.PlayState;
 import org.wildrabbit.PlayState.Shape;
+import org.wildrabbit.game.BaseBullet;
+
+
+
+typedef EnemyConfig =
+{
+	var configID:Int; // We won't use this for now
+	var graphic:FlxGraphicAsset;
+	var frames:Array<Int>;
+	var framerate:Int;
+	var shape:Shape;
+	var baseSpeed:Float;
+	var bulletConfig:BulletConfig;
+	var baseCooldown:Float;
+	var baseStartDelay:Float;
+	var hp:Int;
+	var lifetime:Float; // -1: Infinite (default)
+	var width:Int;
+	var height:Int;
+}
+
+ @:enum
+ abstract EnemyBehaviourType(Int) from Int to Int
+ {
+	 var Wanderer = 0;
+	 var Chaser = 1;
+	 var Avoider = 2;
+	 var NumEntries = Avoider - Wanderer + 1;
+ }
 
 /**
  * ...
@@ -25,8 +54,108 @@ import org.wildrabbit.PlayState.Shape;
  */
 class Enemy extends Entity
 {
+	public static var ENEMY_LIST:Array<EnemyConfig> = [
+		{
+			configID:ENEMY_ID_CHASER_CIRCLE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[4, 5],
+			framerate:2,
+			shape:Shape.Circle,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32
+		},
+		{
+			configID:ENEMY_ID_CHASER_TRIANGLE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[8, 9],
+			framerate:2,
+			shape:Shape.Triangle,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32
+		},
+		{
+			configID:ENEMY_ID_CHASER_SQUARE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[12, 13],
+			framerate:2,
+			shape:Shape.Square,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32			
+		},
+		{
+			configID:ENEMY_ID_WANDERER_CIRCLE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[6, 7],
+			framerate:2,
+			shape:Shape.Circle,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32	
+		},
+		{
+			configID:ENEMY_ID_WANDERER_TRIANGLE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[10, 11],
+			framerate:2,
+			shape:Shape.Triangle,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32	
+		},
+		{
+			configID:ENEMY_ID_WANDERER_SQUARE,
+			graphic:"assets/images/ship_shapesv3.png",
+			frames:[14, 15],
+			framerate:2,
+			shape:Shape.Square,
+			baseSpeed: BASIC_ENEMY_SPEED,
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			baseCooldown: SHOOT_COOLDOWN,
+			baseStartDelay: INITIAL_DELAY,
+			hp: 4,
+			lifetime: -1,
+			width:32,
+			height:32	
+		}
+	];
+	
+	public static var ENEMY_ID_CHASER_CIRCLE:Int = 0;
+	public static var ENEMY_ID_CHASER_TRIANGLE:Int = 1;
+	public static var ENEMY_ID_CHASER_SQUARE:Int = 2;
+	public static var ENEMY_ID_WANDERER_CIRCLE:Int = 3;
+	public static var ENEMY_ID_WANDERER_TRIANGLE:Int = 4;
+	public static var ENEMY_ID_WANDERER_SQUARE:Int = 5;
+		
 	private static var count:Int = 0;
-	private static var ShapeAnims:Array<String> = ["circle", "triangle", "square"];
+	//private static var ShapeAnims:Array<String> = ["circle", "triangle", "square"];
 	private static var BASIC_ENEMY_SPEED:Int = 55;
 	private static var BULLET_SPEED:Int = 250;
 	private static var BULLET_TTL:Float = 1.5;
@@ -50,13 +179,37 @@ class Enemy extends Entity
 	public var mDeathSound:FlxSound;
 	public  var mShootSound:FlxSound;
 	
+	public var baseSpeed(get, null):Float;
+	function get_baseSpeed():Float	
+	{
+		return mConfig.baseSpeed;
+	}
+	
+	public var baseBulletSpeed (get, null):Float;
+	function get_baseBulletSpeed():Float	
+	{
+		return mConfig.bulletConfig.speed;
+	}
+	
+	public var baseBulletLifetime (get, null):Float;
+	function get_baseBulletLifetime():Float
+	{
+		return mConfig.bulletConfig.lifetime;
+	}
+	
+	public var baseCooldown (get, null):Float;
+	function get_baseCooldown():Float
+	{
+		return mConfig.baseCooldown;
+	}
+	
+	private var mConfig:EnemyConfig;
+	
+	
 	public function new(parent:PlayState) 
 	{
 		super(parent, 0);
-		loadGraphic("assets/images/ship_shapesv2.png", true, 32, 32);
-		animation.add("circle", [4, 5], 2);
-		animation.add("triangle", [8, 9], 2);
-		animation.add("square", [12, 13], 2);	
+			
 		//blend = BlendMode.ADD;
 		mHitTimer = new FlxTimer();
 		mDeadTween  = null;
@@ -70,19 +223,27 @@ class Enemy extends Entity
 		mCanShoot = false;
 		mCanPlayShoot = false;
 		
+		mConfig = null;
+		
 		mNoHitSound = FlxG.sound.load("assets/sounds/enemy_nohit.wav",0.2);
 		mShootSound = FlxG.sound.load("assets/sounds/enemy_shoot.wav",0.2);
 		mHitSound = FlxG.sound.load("assets/sounds/enemy_hit.wav",0.2);
 		mDeathSound = FlxG.sound.load("assets/sounds/enemy_explode.wav",0.2);
 	}
 	
-	public function start(shape:Shape):Void
+	public function start(id:Int):Void
 	{
-		switchShape(shape);
+		mConfig = ENEMY_LIST[id];		
+		loadGraphic(mConfig.graphic, true, mConfig.width, mConfig.height);
+		animation.remove("move");
+		animation.add("move", mConfig.frames, mConfig.framerate);
+		animation.play("move");
+		
+		switchShape(mConfig.shape);
 		scale.set(1, 1);
 		updateHitbox();
 		centerOrigin();
-		maxHealth = 4;
+		maxHealth = mConfig.hp;
 		alpha = 1;
 		health = maxHealth;
 		mStunned = false;
@@ -94,13 +255,12 @@ class Enemy extends Entity
 		
 		mCanShoot = false;
 		mCanPlayShoot = false;
-		mShootTimer.start(INITIAL_DELAY, function(t:FlxTimer):Void { mCanShoot = mCanPlayShoot = true; } );
+		mShootTimer.start(mConfig.baseStartDelay, function(t:FlxTimer):Void { mCanShoot = mCanPlayShoot = true; } );
 	}
-	
+
 	override public function switchShape(shape:Shape):Void
 	{
-		super.switchShape(shape);
-		animation.play(ShapeAnims[mShape]);
+		mShape = shape;
 	}
 	
 	override public function update(elapsed:Float):Void
@@ -178,7 +338,7 @@ class Enemy extends Entity
 		mEmitter.setPosition(x + width / 2, y + width / 2);
 		mEmitter.lifespan.set(0.3);
 		mEmitter.speed.set(200, 200, 0, 0);
-		mEmitter.color.set(color);
+		mEmitter.color.set(Entity.ShapeColours[cast(mShape,Int)]);
 		mEmitter.alpha.set(0.4, 0.6, 0.0,0.0);
 		mEmitter.blend = BlendMode.ADD;
 		mEmitter.startTimed(0.3, true, 0.1, 15);
@@ -197,6 +357,7 @@ class Enemy extends Entity
 		trace(mID + " is destroyed!");
 		mStunned = true;
 		solid = false;
+		mShootTimer.cancel();		
 		velocity.set(0, 0);
 		mCanShoot = false;
 		
@@ -214,7 +375,7 @@ class Enemy extends Entity
 			mEmitter.setPosition(x + width / 2, y + width / 2);
 			mEmitter.lifespan.set(1);
 			mEmitter.speed.set(80, 180, 0, 0);
-			mEmitter.color.set(color);
+			mEmitter.color.set(Entity.ShapeColours[cast(mShape,Int)]);
 			mEmitter.alpha.set(0.4, 0.6, 0.0,0.0);
 			mEmitter.blend = BlendMode.ADD;
 			mEmitter.startTimed(0.5, true, 0.1, 30);
@@ -277,25 +438,30 @@ class Enemy extends Entity
 	public function shoot(theAngle:Float):Void
 	{
 		mCanShoot = false;
-		var p = FlxPoint.weak(x + width, y + height / 2);
+		var p = FlxPoint.get(x + width, y + height / 2);
 		var shootAngle = theAngle;
 		
 		var shot:Bool = false;
+		
+		var config:BulletConfig = { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 };
+		
+		var dir:FlxVector = FlxVector.get();
 			
 		var bullet = mParent.mBullets.getFirstAvailable(EnemyBullet);
 		if (bullet != null)
 		{
 			p.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
+			p.x -= config.width/2;
+			p.y -= config.height / 2;
+			
+			dir.set(Math.cos(shootAngle), Math.sin(shootAngle));
 		
-			bullet.reset(0,0);
-			bullet.velocity.set(getBulletSpeed() * Math.cos(shootAngle), getBulletSpeed() * Math.sin(shootAngle));
-			bullet.setPosition(p.x - bullet._halfSize.x, p.y - bullet._halfSize.y);
-			bullet.angle = angle - 5;
-			bullet.start(this, BULLET_TTL);
+			bullet.start(this, config, p, dir, angle - 5);
 			shot = true;
 		}
 
-		p.putWeak();
+		p.put();
+		dir.put();
 		mShootTimer.start(getRateOfFire(), onCooldownFinished);
 		if (shot && mShootSound != null && mCanPlayShoot)
 		{			
@@ -312,22 +478,11 @@ class Enemy extends Entity
 	//----------
 	public function getSpeed():Float
 	{
-		var speedMultipliers:Array<Float> = [1, 1.2, 1.4, 1.6];
-		var idx:Int = Math.floor(Math.min(speedMultipliers.length - 1, mParent.getDiffLevel()));
-		return BASIC_ENEMY_SPEED * speedMultipliers[idx];
-	}
-	
-	public function getBulletSpeed():Float
-	{
-		var speedMultipliers:Array<Float> = [1, 1.2, 1.4, 1.6];
-		var idx:Int = Math.floor(Math.min(speedMultipliers.length - 1, mParent.getDiffLevel()));
-		return BULLET_SPEED * speedMultipliers[idx];
+		return Balancing.getSpeed(this, mParent.mPlayerShip.mLevel);
 	}
 	
 	public function getRateOfFire():Float
 	{
-		var rateMultipliers:Array<Float> = [1, 0.8, 0.76, 0.65];
-		var idx:Int = Math.floor(Math.min(rateMultipliers.length - 1, mParent.getDiffLevel()));
-		return SHOOT_COOLDOWN * rateMultipliers[idx];
+		return Balancing.getRateOfFire(this, mParent.mPlayerShip.mLevel);
 	}
 }

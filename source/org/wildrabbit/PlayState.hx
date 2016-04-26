@@ -7,6 +7,9 @@ import flixel.FlxBasic.FlxType;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
+#if KONGREGATE
+import flixel.addons.api.FlxKongregate;
+#end
 import flixel.addons.effects.FlxTrail;
 import flixel.addons.weapon.FlxBullet;
 import flixel.addons.weapon.FlxWeapon;
@@ -81,6 +84,7 @@ class PlayState extends FlxState
 	public static var KILLS_TO_LIFE:Int = 10;
 	public static var KILLS_TO_MULTIPLIER:Int = 20;
 	
+	
 	public var mWorld:World;
 	
 	public var mPlayerShip:Ship;
@@ -146,6 +150,8 @@ class PlayState extends FlxState
 		mSpawnTimer = new FlxTimer();
 		
 		var inputName:String;
+		Reg.cursorSprite = new FlxSprite(0, 0, "assets/images/cursor.png");
+		FlxG.mouse.load(Reg.cursorSprite.pixels);
 		switch(Reg.selectedInputScheme)
 		{
 			case InputScheme.Gamepad:
@@ -267,7 +273,7 @@ class PlayState extends FlxState
 		mHealth = new FlxText(32, 32, 72, "HP: ", 14);
 		add(mHealth);
 		mHealthBar = new FlxBar(104, 34, FlxBarFillDirection.LEFT_TO_RIGHT, 100, 14, mPlayerShip, "HP", 0, mPlayerShip.maxHealth);
-		mHealthBar.createColoredEmptyBar(FlxColor.GRAY);
+		mHealthBar.createColoredEmptyBar(FlxColor.fromRGBFloat(0.1,0.1,0.1));
 		mHealthBar.createGradientFilledBar([FlxColor.GREEN, FlxColor.YELLOW, FlxColor.RED], 10, 180, true, FlxColor.WHITE);
 		add(mHealthBar);
 
@@ -291,16 +297,13 @@ class PlayState extends FlxState
 		}
 		mIngameMultText = new FlxText(0, 0, 100, "x2", 16);
 		mIngameMultText.alignment = FlxTextAlign.CENTER;
-		mDiffText = new FlxText(32, 96, 72, "Diff: " + getDiffLevel(), 14);
+		mDiffText = new FlxText(32, 96, 72, "Diff: " + mPlayerShip.mLevel, 14);
 		add(mDiffText);
 		
 		
 		mScoreMultiplier = 1;
 		mToNextLife = toNextLife();
 		mToNextMultiplier = KILLS_TO_MULTIPLIER;
-		
-		FlxG.watch.add(mPlayerShip, "mKills", "kills");
-		FlxG.watch.add(this, "mScoreMultiplier", "score Mult");
 		
 		updateShapeHint();
 		mBlasterHint = new FlxText(800, 64, 100, "Blaster loading", 14);
@@ -311,7 +314,8 @@ class PlayState extends FlxState
 		mBlasterTween = FlxTween.tween(mBlasterHint.scale, { x:1.15, y:1.15 }, 0.4, { ease:FlxEase.bounceInOut, type:FlxTween.PINGPONG } );
 		mBlasterTween.active = false;
 		
-		FlxG.sound.playMusic("assets/music/testMusic.wav", 0.3);
+		FlxG.sound.playMusic("assets/music/testMusic2.wav", 0.3);
+		FlxG.sound.play("assets/sounds/start.wav");
 		
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));
 		#if debug
@@ -339,7 +343,7 @@ class PlayState extends FlxState
 		var numEnemies:Int = FlxG.random.int(enemyRange.min, enemyRange.max);
 		
 		var point:FlxPoint = FlxPoint.get();
-		var waveType:Shape = FlxG.random.int(Shape.Circle, Shape.Square);
+		var waveType:Int = FlxG.random.int(Enemy.ENEMY_ID_CHASER_CIRCLE, Enemy.ENEMY_ID_WANDERER_SQUARE);
 		for (i in 0...numEnemies)
 		{
 			var e = mEnemies.getFirstAvailable(Enemy);
@@ -349,7 +353,7 @@ class PlayState extends FlxState
 				e.start(waveType);
 				var attempts:Int = 10;
 				do {
-					var d = FlxG.random.float(0, mWorld.mRadius - e.width / 2);
+					var d = FlxG.random.float(0, mWorld.mRadius - 32);
 					var a = FlxG.random.float(0, 360);
 					point = FlxAngle.getCartesianCoords(d, a);
 					dist = FlxMath.distanceToPoint(mPlayerShip, point.add(FlxG.width/2, FlxG.height/2));
@@ -381,6 +385,7 @@ class PlayState extends FlxState
 	{
 		super.destroy();
 		FlxG.mouse.visible = true;
+		FlxG.mouse.unload();		
 	}
 
 	/**
@@ -434,13 +439,21 @@ class PlayState extends FlxState
 		mMultiplierText.text = "(x" +mScoreMultiplier + ")";
 		
 		mPlaytime.text = "Playtime: " + FlxStringUtil.formatTime(mPlayerShip.mPlayTime);
-		mDiffText.text =  "Diff: " + getDiffLevel();
 		
 		var blasterAvailable:Bool = mPlayerShip.mEnergy == mPlayerShip.mMaxEnergy;
-		mBlasterHint.color = blasterAvailable ? FlxColor.CYAN : FlxColor.WHITE;
-		mBlasterHint.text = blasterAvailable ? "Blaster ready!!" : "Blaster loading";
-		if (!blasterAvailable && mBlasterTween.active) mBlasterTween.active = false;
-		else if (blasterAvailable && !mBlasterTween.active) mBlasterTween.active = true;
+		if (!blasterAvailable && mBlasterTween.active)
+		{
+			mBlasterHint.color = FlxColor.WHITE;
+			mBlasterHint.text = "Blaster loading";
+			mBlasterTween.active = false;
+		}
+		else if (blasterAvailable && !mBlasterTween.active)
+		{
+			mBlasterHint.color = FlxColor.CYAN;
+			mBlasterHint.text = "Blaster ready!!";
+			mBlasterTween.active = true;
+			FlxG.sound.play("assets/sounds/blaster_ready.wav");
+		}
 
 		
 		if (!mPlayerShip.alive) return;
@@ -449,6 +462,12 @@ class PlayState extends FlxState
 		FlxG.overlap(mPlayerShip, mEnemies, onPlayerEnemyCollision);
 		FlxG.overlap(mPlayerShip, mPickups, onPlayerPickup);
 		FlxG.collide(mEnemies, mEnemies);
+	}
+	
+	public function onLevelUp():Void
+	{
+		FlxG.sound.play("assets/sounds/level_up.wav");
+		mDiffText.text =  "Diff: " + mPlayerShip.mLevel;
 	}
 	
 	public function onPlayerPickup(player:Ship, pickup:Pickup):Void
@@ -563,21 +582,33 @@ class PlayState extends FlxState
 		mEnemies.forEachAlive(function(e:Enemy):Void { e.onPlayerDied(); } );
 		
 		Reg.score = mPlayerShip.mScore;
-		if (mPlayerShip.mScore > Reg.highScore)
+		if (Reg.score > Reg.highScore)
 		{
-			Reg.highScore = mPlayerShip.mScore;
+			Reg.highScore = Reg.score;
 		}
 		
 		Reg.time = mPlayerShip.mPlayTime;
-		if (mPlayerShip.mPlayTime > Reg.maxTime)
+		if (Reg.time > Reg.maxTime)
 		{
-			Reg.maxTime = mPlayerShip.mPlayTime;
+			Reg.maxTime = Reg.time;
 		}
 		
-		var t:FlxTimer = new FlxTimer();
-		t.start(0.5, function(t:FlxTimer):Void {FlxG.switchState(new GameOverState()); } );
+		#if KONGREGATE
+			FlxKongregate.init(onLoad);
+		#end
+
+		
+		FlxG.sound.play("assets/sounds/game_over.wav", 1, false, null,true, function():Void{FlxG.switchState(new GameOverState());});
 	}
-	
+
+#if KONGREGATE
+	public function onLoad():Void
+	{
+		FlxKongregate.connect();
+		FlxKongregate.submitStats("Playtime", Math.floor(Reg.time));
+		FlxKongregate.submitStats("Highscore", Reg.score);
+	}
+#end	
 		
 	public function onPlayerHit():Void
 	{
@@ -588,12 +619,15 @@ class PlayState extends FlxState
 		
 		if (isResetMult)
 		{
-			mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
-			,{ onComplete:function(t:FlxTween):Void { 
-					mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15
-						, { ease:FlxEase.backOut, type:FlxTween.ONESHOT , onComplete:function(t:FlxTween) { remove(mMultiplierText); } } ); 
-				}
-			, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			if (mMultiplierTween == null)
+			{
+				mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
+				,{ onComplete:function(t:FlxTween):Void { 
+						mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15
+							, { ease:FlxEase.backOut, type:FlxTween.ONESHOT , onComplete:function(t:FlxTween) { remove(mMultiplierText); mMultiplierTween = null; } } ); 
+					}
+				, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			}
 			
 			mIngameMultText.text = "Bonus lost!";
 			mIngameMultText.color = FlxColor.RED;
@@ -605,6 +639,8 @@ class PlayState extends FlxState
 			
 			FlxTween.linearMotion(mIngameMultText, startX, startY, startX, startY - 40, 1);
 			FlxTween.tween(mIngameMultText, { alpha:0 }, 1, { onComplete:function(t:FlxTween) { remove(mIngameMultText); }} );
+			
+			FlxG.sound.play("assets/sounds/lost_multiplier.wav");
 		}
 		mToNextMultiplier = KILLS_TO_MULTIPLIER;
 	}
@@ -642,9 +678,13 @@ class PlayState extends FlxState
 			{
 				add(mMultiplierText);				
 			}
-			mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
-			,{ onComplete:function(t:FlxTween):Void { mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15, {ease:FlxEase.backOut,type:FlxTween.ONESHOT } ); }
-			, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			if (mMultiplierTween == null)
+			{
+				FlxG.sound.play("assets/sounds/increase_mult.wav");
+				mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1.15, y:1.15 }, 0.4
+				,{ onComplete:function(t:FlxTween):Void { mMultiplierTween = FlxTween.tween(mMultiplierText.scale, { x:1, y:1 }, 0.15, { ease:FlxEase.backOut, type:FlxTween.ONESHOT, onComplete:function(t:FlxTween) { mMultiplierTween = null; } } ); }
+				, ease:FlxEase.backIn, type:FlxTween.ONESHOT } );
+			}
 			
 		}
 				
@@ -675,7 +715,7 @@ class PlayState extends FlxState
 		{
 			var point:FlxPoint = FlxPoint.get();
 			do {
-				var d = FlxG.random.float(0, mWorld.mRadius - 16);
+				var d = FlxG.random.float(0, mWorld.mRadius - 32);
 				var a = FlxG.random.float(0, 360);
 				point = FlxAngle.getCartesianCoords(d, a);
 			}
@@ -705,29 +745,18 @@ class PlayState extends FlxState
 	}
 	
 	//----------BALANCING--------------//
-	
-	public function getDiffLevel():Int
-	{
-		return Math.floor(Math.min((mPlayerShip.mPlayTime / 60), 4));
-	}
-	
-	
 	public function toNextLife():Int
 	{
-		return KILLS_TO_LIFE * (1 + getDiffLevel());
+		return Balancing.toNextLife(mPlayerShip.mLevel);
 	}
 	
 	public function getEnemyWaveSize():FlxBounds<Int>
 	{
-		var minValues:Array<Int> = [1, 2, 3,4];
-		var maxValues:Array<Int> = [4, 6, 6, 7];
-		var idx:Int = Math.floor(Math.min(getDiffLevel(), minValues.length - 1));
-		return new FlxBounds<Int>(minValues[idx],maxValues[idx]);
+		return Balancing.getEnemyWaveSize(mPlayerShip.mLevel);
 	}
 	
 	public function getPlayerLeeway():Float 
 	{
-		var leeways:Array<Float> = [6, 4, 3, 3];
-		return mPlayerShip.width * leeways[Math.floor(Math.min(getDiffLevel(), leeways.length - 1))];
+		return Balancing.getPlayerLeeway(mPlayerShip.mLevel,mPlayerShip);
 	}
 }

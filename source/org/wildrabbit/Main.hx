@@ -7,6 +7,7 @@ import flash.display.StageScaleMode;
 import flash.events.Event;
 import flash.Lib;
 import flixel.FlxGame;
+import flixel.FlxSprite;
 import flixel.FlxState;
 
 class Main extends Sprite 
@@ -64,9 +65,10 @@ class Main extends Sprite
 			gameHeight = Math.ceil(stageHeight / zoom);
 		}
 
-		addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
-		
 		Reg.score = Reg.highScore = 0;
 		Reg.time = Reg.maxTime = 0;
+
+		addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
+		
 	}
 }

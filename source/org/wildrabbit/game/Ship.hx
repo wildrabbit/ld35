@@ -3,6 +3,7 @@ package org.wildrabbit.game;
 import flixel.addons.effects.FlxTrail;
 import flixel.effects.FlxFlicker;
 import flixel.math.FlxRect;
+import flixel.math.FlxVelocity;
 import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.system.FlxSound;
 import openfl.display.BlendMode;
@@ -24,6 +25,7 @@ import org.wildrabbit.FlxTimedEmitter;
 import org.wildrabbit.PlayState;
 import org.wildrabbit.PlayState.Shape;
 import org.wildrabbit.Reg;
+import org.wildrabbit.game.BaseBullet.BulletConfig;
 
 /**
  * ...
@@ -41,6 +43,8 @@ class Ship extends Entity
 	
 	public var mLives:Int;
 	public var mStartLives:Int;
+	
+	public var mLevel:Int;
 	
 	public var mKills:Int;
 	public var mScore:Int;
@@ -155,6 +159,8 @@ class Ship extends Entity
 		mKills = 0;
 		mScore = 0;
 		mPlayTime = 0;
+		
+		mLevel = Balancing.getDiffLevel(this);
 	}
 	
 	override public function switchShape (nextShape:Shape):Void
@@ -256,7 +262,12 @@ class Ship extends Entity
 		
 		updateCollisions();
 		
-
+		var currLevel:Int = Balancing.getDiffLevel(this);
+		if (currLevel != mLevel)
+		{
+			mLevel = currLevel;
+			mParent.onLevelUp();
+		}
 	}
 	
 	public function shoot(theAngle:Float):Void
@@ -266,34 +277,32 @@ class Ship extends Entity
 		var shootAngle = theAngle;
 		
 		var shot:Bool = false;
-			
+		var bulletConfig:BulletConfig = { graphic:"assets/images/bullet_main.png", lifetime:BULLET_TTL, speed:BULLET_SPEED , width:16, height:8};
+		var bulletVelocity:FlxVector = FlxVector.get(Math.cos(shootAngle), Math.sin(shootAngle));
+
 		var bullet = mParent.mBullets.getFirstAvailable(Bullet);
 		if (bullet != null)
 		{
-			var p1 = FlxPoint.weak(p.x, p.y - 8);
+			var p1 = FlxPoint.get(p.x, p.y - 8);
 			p1.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
-		
-			bullet.reset(0,0);
-			bullet.velocity.set(BULLET_SPEED * Math.cos(shootAngle), BULLET_SPEED * Math.sin(shootAngle));
-			bullet.setPosition(p1.x - bullet._halfSize.x, p1.y - bullet._halfSize.y);
-			bullet.angle = angle - 5;
-			bullet.start(this, BULLET_TTL);
-			p1.putWeak();
+			p1.x -= bulletConfig.width / 2;
+			p1.y -= bulletConfig.height / 2;
+			
+			bullet.start(this, bulletConfig, p1, bulletVelocity, angle - 5);
+			p1.put();
 			shot = true;
 		}
 
 		bullet = mParent.mBullets.getFirstAvailable(Bullet);
 		if (bullet != null)
 		{
-			var p2 = FlxPoint.weak(p.x, p.y + 8);
+			var p2 = FlxPoint.get(p.x, p.y + 8);
 			p2.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
+			p2.x -= bulletConfig.width / 2;
+			p2.y -= bulletConfig.height / 2;
 		
-			bullet.reset(0,0);
-			bullet.velocity.set(BULLET_SPEED * Math.cos(shootAngle), BULLET_SPEED * Math.sin(shootAngle));
-			bullet.setPosition(p2.x - bullet._halfSize.x, p2.y - bullet._halfSize.y);
-			bullet.angle = angle + 5;
-			bullet.start(this, BULLET_TTL);
-			p2.putWeak();
+			bullet.start(this, bulletConfig, p2, bulletVelocity, angle + 5);
+			p2.put();
 			shot = true;			
 		}
 		p.putWeak();
@@ -304,6 +313,7 @@ class Ship extends Entity
 			mShootDoubleSound.play(true);
 			mShootSoundTimer.start(0.1, function (timer:FlxTimer):Void { mCanPlayShoot = true; } );
 		}
+		bulletVelocity.put();
 	}
 		
 /*	override public function draw():Void

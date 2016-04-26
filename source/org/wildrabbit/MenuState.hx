@@ -51,9 +51,9 @@ class MenuState extends FlxState
 		hint.color = FlxColor.PURPLE;
 		add(hint);
 		
-		mCursorSprite = new FlxSprite(0,0,"assets/images/cursor.png");
-		FlxG.mouse.load(mCursorSprite.pixels);
-		
+		Reg.cursorSprite = new FlxSprite(0, 0, "assets/images/cursor.png");
+		FlxG.mouse.load(Reg.cursorSprite.pixels);
+		add(new FlxText(860, 600, 60, "v"+Reg.currentVersion, 14));
 	}
 
 	/**
@@ -71,6 +71,7 @@ class MenuState extends FlxState
 		remove(bg);
 		hint = null;
 		bg = null;
+		FlxG.mouse.unload();
 	}
 
 	/**
@@ -81,7 +82,7 @@ class MenuState extends FlxState
 		super.update(elapsed);
 		if (allowExit && (FlxG.keys.justPressed.ANY|| FlxG.mouse.justPressed || (Reg.gamepadAvailable() && FlxG.gamepads.lastActive.justPressed.A)))
 		{
-			FlxG.switchState(new HelpState());
+			FlxG.sound.play("assets/sounds/click.wav", 1, false, null, true, function() { FlxG.switchState(new HelpState()); } );			
 		}		
 	}
 }

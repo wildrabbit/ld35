@@ -2,6 +2,7 @@ package org.wildrabbit;
 
 import flixel.FlxG;
 import flixel.util.FlxSave;
+import flixel.FlxSprite;
 
  
  @:enum
@@ -19,11 +20,14 @@ import flixel.util.FlxSave;
  */
 class Reg
 {
+	public static var currentVersion:String = "0.0.2";
 	public static var selectedInputScheme:InputScheme = InputScheme.WASD;
 	public static function gamepadAvailable():Bool
 	{
 		return FlxG.gamepads.lastActive != null;
 	}
+	
+	public static var cursorSprite:FlxSprite = null;
 	
 	/**
 	 * Generic levels Array that can be used for cross-state stuff.

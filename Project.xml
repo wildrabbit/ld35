@@ -2,7 +2,7 @@
 <project>
 	<!------------------------------APPLICATION SETTINGS---------------------------->
 	
-	<app title="ld35" file="ld35" main="org.wildrabbit.Main" version="0.0.1" company="ith1ldin" />
+	<app title="Getting Shifty" file="GettingShifty" main="org.wildrabbit.Main" version="0.0.3" company="ith1ldin" />
 	
 	<!--The flixel preloader is not accurate in Chrome. You can use it regularly if you embed the swf into a html file
 	<!--or you can set the actual size of your file manually at "FlxPreloaderBase-onUpdate-bytesTotal"!-->
@@ -11,12 +11,14 @@
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2 -->
 	<set name="SWF_VERSION" value="11.8" />
 	
+	<icon path="assets/icon.png"/>
+	
 	<!--------------------------------WINDOW SETTINGS------------------------------->
 	
 	<!--These window settings apply to all targets-->
 	<window width="960" height="640" fps="60" background="#000000" hardware="true" vsync="true" />
 		
-	<window if="flash" width="900" height="600" fps="60" background="#000000" hardware="true" vsync="true" />
+	<window if="flash" width="960" height="640" fps="60" background="#000000" hardware="true" vsync="true" /> <!-- For kongregate: 768x512, but zoom looks weird :/ -->
 	<!--Web-specific-->
 	<window if="web" orientation="portrait"  />
 	
@@ -78,6 +80,8 @@
 	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
 		
 	<haxedef name="NO_CHEATS" unless="debug"/>
+		
+	<haxedef name="KONGREGATE" if="flash" />
 	
 	<!--------------------------------CUSTOM---------------------------------------->
 	

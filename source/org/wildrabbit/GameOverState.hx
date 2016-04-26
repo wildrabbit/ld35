@@ -63,6 +63,8 @@ class GameOverState extends FlxState
 		
 		add(new FlxSprite(0, 0, "assets/images/bg_front.png"));
 		FlxG.sound.music.stop();
+		Reg.cursorSprite = new FlxSprite(0, 0, "assets/images/cursor.png");		
+		FlxG.mouse.load(Reg.cursorSprite.pixels);
 	}
 	public function getHintText():String
 	{
@@ -90,6 +92,7 @@ class GameOverState extends FlxState
 		remove(bg);
 		hint = null;
 		bg = null;
+		FlxG.mouse.unload();
 	}
 
 	/**
@@ -103,10 +106,12 @@ class GameOverState extends FlxState
 			var isGamepad:Bool = Reg.selectedInputScheme == InputScheme.Gamepad;
 			if (isGamepad && FlxG.gamepads.anyJustPressed(FlxGamepadInputID.START) || (!isGamepad && FlxG.keys.justReleased.SPACE))
 			{
+				FlxG.sound.play("assets/sounds/click.wav");				
 				FlxG.switchState(new PlayState());				
 			}
 			else if (isGamepad && FlxG.gamepads.anyJustPressed(FlxGamepadInputID.BACK) || (!isGamepad && FlxG.keys.justReleased.ESCAPE))
 			{
+				FlxG.sound.play("assets/sounds/click.wav");					
 				FlxG.switchState(new MenuState());				
 			}
 		}		

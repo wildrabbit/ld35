@@ -21,6 +21,10 @@ class EnemyBullet extends BaseBullet
 	public function new(playState:PlayState)
 	{	
 		super(playState);		
+	}
+
+	override public function doLoadGraphic():Void
+	{
 		loadGraphic("assets/images/bullet_enemy.png");
 	}
 	
