@@ -277,7 +277,7 @@ class Ship extends Entity
 		var shootAngle = theAngle;
 		
 		var shot:Bool = false;
-		var bulletConfig:BulletConfig = { graphic:"assets/images/bullet_main.png", lifetime:BULLET_TTL, speed:BULLET_SPEED , width:16, height:8};
+		var bulletConfig:BulletConfig = { graphic:"assets/images/bullet_main.png", lifetime:BULLET_TTL, speed:BULLET_SPEED , width:16, height:8, burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0 };
 		var bulletVelocity:FlxVector = FlxVector.get(Math.cos(shootAngle), Math.sin(shootAngle));
 
 		var bullet = mParent.mBullets.getFirstAvailable(Bullet);

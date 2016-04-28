@@ -25,7 +25,7 @@ class EnemyBullet extends BaseBullet
 
 	override public function doLoadGraphic():Void
 	{
-		loadGraphic("assets/images/bullet_enemy.png");
+		loadGraphic(mConfig.graphic);
 	}
 	
 	override public function doSwitchShape(shape:Shape):Void

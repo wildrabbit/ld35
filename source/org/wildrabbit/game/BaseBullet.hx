@@ -21,6 +21,12 @@ typedef BulletConfig =
 	var lifetime:Float;
 	var width:Float;
 	var height:Float;
+	var burst:Bool;
+	var burstSequenceCount:Int; // How many shots in sequence
+	var burstParallelCount:Int;
+	var burstSpread:Float;
+	var burstAngle:Float;
+	var burstCooldown:Float;
 }
 
 /**

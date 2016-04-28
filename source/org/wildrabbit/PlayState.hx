@@ -343,7 +343,19 @@ class PlayState extends FlxState
 		var numEnemies:Int = FlxG.random.int(enemyRange.min, enemyRange.max);
 		
 		var point:FlxPoint = FlxPoint.get();
-		var waveType:Int = FlxG.random.int(Enemy.ENEMY_ID_CHASER_CIRCLE, Enemy.ENEMY_ID_WANDERER_SQUARE);
+		
+		var waveType:Int = 0;
+		if (Balancing.hasAllowedEnemies(mPlayerShip.mLevel))
+		{
+			var values:Array<Int> = Balancing.getAllowedEnemies(mPlayerShip.mLevel);
+			waveType = values[FlxG.random.int(0, values.length - 1)];
+		}
+		else
+		{
+			waveType = FlxG.random.int(Enemy.ENEMY_ID_CHASER_CIRCLE, Enemy.ENEMY_ID_WANDERER_SQUARE);
+		}
+		var waveTypeIdx:Int = FlxG.random.int(0);
+		
 		for (i in 0...numEnemies)
 		{
 			var e = mEnemies.getFirstAvailable(Enemy);

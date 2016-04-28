@@ -26,12 +26,12 @@
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="flixel=4.0.1&#xA;openfl=3.6.1&#xA;lime=2.9.1&#xA;hscript=2.0.7&#xA;flixel-addons=2.0.0&#xA;openfl-next&#xA;tools=2.9.1&#xA;FLX_NO_DEBUG&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;openfl-flash&#xA;NO_CHEATS&#xA;KONGREGATE&#xA;web&#xA;display" />
+    <option directives="flixel=4.0.1&#xA;openfl=3.6.1&#xA;lime=2.9.1&#xA;hscript=2.0.7&#xA;flixel-addons=2.0.0&#xA;openfl-next&#xA;tools=2.9.1&#xA;no-compilation&#xA;openfl-flash&#xA;KONGREGATE&#xA;web&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
     <option enabledebug="False" />
-    <option additional="#--macro keep('IntIterator')&#xA;--macro flixel.system.macros.FlxDefines.run()&#xA;-swf-version 11.8" />
+    <option additional="#--macro keep('IntIterator')&#xA;--macro flixel.system.macros.FlxDefines.run()&#xA;-swf-version 11.8&#xA;-debug " />
   </build>
   <!-- haxelib libraries -->
   <haxelib>

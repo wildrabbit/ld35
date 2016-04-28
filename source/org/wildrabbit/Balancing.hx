@@ -21,6 +21,8 @@ typedef BalancingConfig =
 	var enemyRatesOfFire:Array<Float>;	
 	
 	var bulletSpeedMultipliers:Array<Float>;
+	
+	@:optional var allowedEnemies:Array<Array<Int>>;
 };
 /**
  * ...
@@ -42,6 +44,12 @@ class Balancing
 		minEnemyWaveSizes:[1, 2, 3,4],
 		maxEnemyWaveSizes:[4, 6, 6, 7],
 		bulletSpeedMultipliers:[1, 1.2, 1.4, 1.6],
+		allowedEnemies: [
+			[Enemy.ENEMY_ID_WANDERER_CIRCLE, Enemy.ENEMY_ID_WANDERER_TRIANGLE, Enemy.ENEMY_ID_WANDERER_SQUARE], 
+			[Enemy.ENEMY_ID_WANDERER_CIRCLE, Enemy.ENEMY_ID_WANDERER_TRIANGLE, Enemy.ENEMY_ID_WANDERER_SQUARE], 
+			[],  // Empty: ALL
+			[]
+		]
 	};
 	
 	public static function setConfig(config:BalancingConfig):Void
@@ -69,7 +77,7 @@ class Balancing
 	{		
 		return ship.width * mConfig.playerSafeSpace[Math.floor(Math.min(diffLevel, mConfig.playerSafeSpace.length - 1))];
 	}
-	
+		
 	//----------------------------------------
 	// Enemy-related
 	//----------------------------------------
@@ -89,5 +97,15 @@ class Balancing
 	{
 		var idx:Int = Math.floor(Math.min(mConfig.enemyRatesOfFire.length - 1, diffLevel));
 		return enemy.baseCooldown * mConfig.enemyRatesOfFire[idx];
+	}
+	
+	public static function hasAllowedEnemies(diffLevel:Int):Bool
+	{
+		
+	}
+	
+	public static function getAllowedEnemies(diffLevel:Int):Bool
+	{
+		
 	}
 }

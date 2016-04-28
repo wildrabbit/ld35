@@ -37,6 +37,7 @@ typedef EnemyConfig =
 	var lifetime:Float; // -1: Infinite (default)
 	var width:Int;
 	var height:Int;
+	var behaviour:EnemyBehaviourType;
 }
 
  @:enum
@@ -46,6 +47,52 @@ typedef EnemyConfig =
 	 var Chaser = 1;
 	 var Avoider = 2;
 	 var NumEntries = Avoider - Wanderer + 1;
+ }
+ 
+ class BaseAI
+ {
+	 private var mParent:Enemy;
+	 public function new(parent:Enemy)
+	 {
+		 mParent = parent;
+	 }
+	 public function update(elapsed:Float):Void
+	 {
+		 
+	 }
+ }
+ 
+ class WandererAI extends BaseAI
+ {
+	public static var MIN_TIME:Float = 0.8;
+	public static var MAX_TIME:Float = 3;
+	private var wanderingTime:Float;
+	
+	public function new(parent:Enemy):Void
+	{
+		super(parent);
+		wanderingTime = FlxG.random.float(MIN_TIME, MAX_TIME);
+	}	
+	
+	override public function update(elapsed:Float):Void 
+	{
+		super.update(elapsed);
+	}
+ }
+ 
+ class ChaserAI extends BaseAI 
+ {
+	
+	public function new(parent:Enemy):Void
+	{
+		super(parent);
+	}	
+	
+	override public function update(elapsed:Float):Void 
+	{
+		super.update(elapsed);
+	}
+ 	 
  }
 
 /**
@@ -61,8 +108,9 @@ class Enemy extends Entity
 			frames:[4, 5],
 			framerate:2,
 			shape:Shape.Circle,
+			behaviour: EnemyBehaviourType.Chaser,
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED,lifetime:BULLET_TTL, width:16, height:16, burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0},
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -76,8 +124,9 @@ class Enemy extends Entity
 			frames:[8, 9],
 			framerate:2,
 			shape:Shape.Triangle,
+			behaviour: EnemyBehaviourType.Chaser,				
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16, burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0 },
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -91,8 +140,9 @@ class Enemy extends Entity
 			frames:[12, 13],
 			framerate:2,
 			shape:Shape.Square,
+			behaviour: EnemyBehaviourType.Chaser,			
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16, burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0  },
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -106,8 +156,9 @@ class Enemy extends Entity
 			frames:[6, 7],
 			framerate:2,
 			shape:Shape.Circle,
+			behaviour: EnemyBehaviourType.Wanderer,
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16, burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0  },
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -121,8 +172,9 @@ class Enemy extends Entity
 			frames:[10, 11],
 			framerate:2,
 			shape:Shape.Triangle,
+			behaviour: EnemyBehaviourType.Wanderer,
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_aa.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:8, burst:true, burstCooldown:0.1, burstSequenceCount:3, burstParallelCount:1, burstSpread:8.0, burstAngle:0  },
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -136,8 +188,9 @@ class Enemy extends Entity
 			frames:[14, 15],
 			framerate:2,
 			shape:Shape.Square,
+			behaviour: EnemyBehaviourType.Wanderer,
 			baseSpeed: BASIC_ENEMY_SPEED,
-			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 },
+			bulletConfig: { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 , burst:false, burstCooldown:0.0, burstSequenceCount:1, burstParallelCount:1, burstSpread:8.0, burstAngle:0 },
 			baseCooldown: SHOOT_COOLDOWN,
 			baseStartDelay: INITIAL_DELAY,
 			hp: 4,
@@ -168,6 +221,7 @@ class Enemy extends Entity
 	private var mEmitter:FlxTimedEmitter;
 	
 	private var mShootTimer:FlxTimer;
+	private var mBurstTimer:FlxTimer;
 	private var mCanShoot:Bool;
 	private var mCanPlayShoot:Bool;
 	
@@ -219,6 +273,7 @@ class Enemy extends Entity
 		mParent.mDeathEmitters.add(mEmitter);
 		mWanderingTimer = new FlxTimer();
 		mShootTimer = new FlxTimer();
+		mBurstTimer = new FlxTimer();
 		
 		mCanShoot = false;
 		mCanPlayShoot = false;
@@ -435,6 +490,7 @@ class Enemy extends Entity
 		mWanderingTimer.cancel();
 	}
 	
+	private var mRemainingBursts:Int;
 	public function shoot(theAngle:Float):Void
 	{
 		mCanShoot = false;
@@ -443,30 +499,79 @@ class Enemy extends Entity
 		
 		var shot:Bool = false;
 		
-		var config:BulletConfig = { graphic:"assets/images/bullet_enemy.png", speed:BULLET_SPEED, lifetime:BULLET_TTL, width:16, height:16 };
-		
-		var dir:FlxVector = FlxVector.get();
+		var dir:FlxVector = FlxVector.get();		
+
 			
 		var bullet = mParent.mBullets.getFirstAvailable(EnemyBullet);
 		if (bullet != null)
 		{
 			p.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
-			p.x -= config.width/2;
-			p.y -= config.height / 2;
+			p.x -= mConfig.bulletConfig.width/2;
+			p.y -= mConfig.bulletConfig.height / 2;
 			
 			dir.set(Math.cos(shootAngle), Math.sin(shootAngle));
 		
-			bullet.start(this, config, p, dir, angle - 5);
+			bullet.start(this, mConfig.bulletConfig, p, dir, angle - 5);
 			shot = true;
 		}
 
 		p.put();
 		dir.put();
-		mShootTimer.start(getRateOfFire(), onCooldownFinished);
 		if (shot && mShootSound != null && mCanPlayShoot)
 		{			
 			mCanPlayShoot = false;
 			mShootSound.play(true);			
+		}
+				
+		if (mConfig.bulletConfig.burst)
+		{
+			mRemainingBursts = mConfig.bulletConfig.burstSequenceCount;
+			mBurstTimer.start(mConfig.bulletConfig.burstCooldown, function (t:FlxTimer):Void { onBurstCooldownFinished(t, theAngle); } );
+		}
+		else
+		{
+			mShootTimer.start(getRateOfFire(), onCooldownFinished);
+		}
+		
+	}
+	
+	public function onBurstCooldownFinished(timer:FlxTimer, theAngle:Float):Void
+	{
+		mRemainingBursts--;
+		if (mRemainingBursts <= 0)
+		{
+			mRemainingBursts = 0;
+			mShootTimer.start(getRateOfFire(), onCooldownFinished);
+		}
+		else
+		{
+			var p = FlxPoint.get(x + width, y + height / 2);
+			var shootAngle = theAngle;
+		
+			var shot:Bool = false;
+		
+			var dir:FlxVector = FlxVector.get();		
+
+			var bullet = mParent.mBullets.getFirstAvailable(EnemyBullet);
+			if (bullet != null)
+			{
+				p.rotate(FlxPoint.weak(x + width / 2, y + height / 2), angle);
+				p.x -= mConfig.bulletConfig.width/2;
+				p.y -= mConfig.bulletConfig.height / 2;
+				
+				dir.set(Math.cos(shootAngle), Math.sin(shootAngle));
+			
+				bullet.start(this, mConfig.bulletConfig, p, dir, angle - 5);
+				shot = true;
+			}
+
+			p.put();
+			dir.put();
+			if (shot && mShootSound != null)
+			{			
+				mShootSound.play(true);			
+			}
+			mBurstTimer.start(mConfig.bulletConfig.burstCooldown, function (t:FlxTimer):Void { onBurstCooldownFinished(t, theAngle); } );			
 		}
 	}
 	
